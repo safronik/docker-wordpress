@@ -1,0 +1,45 @@
+version: "3"
+
+services:
+    db:
+        build:
+            context: ./
+            dockerfile: Dockerfile-mysql
+        image: wordpress/mysql
+        container_name: wordpress-db
+        ports:
+            - "3307:3306"
+        volumes:
+            - ./volume-db:/var/lib/mysql
+        env_file:
+            - ./env/db.env
+        networks:
+            - net-wordpress
+        restart: unless-stopped
+
+    app:
+        build:
+            context: ./
+            dockerfile: Dockerfile-wordpress
+        image: wordpress/app
+        container_name: wordress-app
+        volumes:
+            - ./volume-wp:/var/www/html
+            - ./config/php:/usr/local/etc/php
+        expose:
+            - 80
+        env_file:
+            - ./env/db.env
+            - ./env/reverse-proxy.env
+            - ./env/wp.env
+        networks:
+            - net-wordpress
+            - proxy
+        restart: unless-stopped
+    
+networks:
+    proxy:
+        external: true
+        name: nginx-proxy
+    net-wordpress:
+        driver: bridge
