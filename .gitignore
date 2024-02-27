@@ -1,0 +1,16 @@
+# Exclude storages for projects
+.idea
+
+# Configs
+/config/php/*
+!/config/php-ini/php.ini
+
+# Logs
+/logs/php/*
+!/logs/php/.gitkeep
+/logs/apache/*
+!/logs/apache/.gitkeep
+
+# Code
+/code/*
+!/code/.gitkeep

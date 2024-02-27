@@ -1,45 +1,63 @@
 version: "3"
 
 services:
+
+    # MySQL
     db:
         build:
-            context: ./
-            dockerfile: Dockerfile-mysql
-        image: wordpress/mysql
-        container_name: wordpress-db
+            context: ./dockerfiles
+            dockerfile: db.dockerfile
+        image: ${PROJECT_NAME}/mysql
+        container_name: ${PROJECT_NAME}-db
         ports:
-            - "3307:3306"
-        volumes:
-            - ./volume-db:/var/lib/mysql
-        env_file:
-            - ./env/db.env
+            - "${MYSQL_PORT}:3306"
+        environment:
+            MYSQL_DATABASE: wordpress
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_USER: wordpress
+            MYSQL_PASSWORD: wordpress
         networks:
-            - net-wordpress
+            - inner
         restart: unless-stopped
 
+    # PHP + Apache
     app:
         build:
-            context: ./
-            dockerfile: Dockerfile-wordpress
-        image: wordpress/app
-        container_name: wordress-app
+            context: ./dockerfiles
+            dockerfile: wordpress.dockerfile
+        image: ${PROJECT_NAME}/app
+        container_name: ${PROJECT_NAME}-app
         volumes:
-            - ./volume-wp:/var/www/html
+            - ./code:/var/www/html
             - ./config/php:/usr/local/etc/php
         expose:
             - 80
-        env_file:
-            - ./env/db.env
-            - ./env/reverse-proxy.env
-            - ./env/wp.env
+        environment:
+            MYSQL_DATABASE: wordpress
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_USER: wordpress
+            MYSQL_PASSWORD: wordpress
+            WORDPRESS_DB_HOST: db
+            WORDPRESS_DB_USER: wordpress
+            WORDPRESS_DB_PASSWORD: wordpress
+            VIRTUAL_HOST: ${PROJECT_NAME}.${PROJECT_DOMAIN}
+            VIRTUAL_PORT: 80
+            XDEBUG_CONFIG: "remote_host=host.docker.internal mode=debug remote_port=${XDEBUG_REMOTE_PORT}"
+            PHP_IDE_CONFIG: "serverName=${PROJECT_NAME}"
         networks:
-            - net-wordpress
-            - proxy
+            - inner
+            - nginx-proxy
+        extra_hosts:
+            host.docker.internal: host-gateway
         restart: unless-stopped
     
 networks:
-    proxy:
+    
+    # Inner bridge network 
+    inner:
+        driver: bridge
+        
+    # Common network for other services
+    nginx-proxy:
         external: true
         name: nginx-proxy
-    net-wordpress:
-        driver: bridge
