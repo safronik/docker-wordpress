@@ -3,7 +3,7 @@
 
 # Configs
 /config/php/*
-!/config/php-ini/php.ini
+!/config/php/php.ini
 
 # Logs
 /logs/php/*
